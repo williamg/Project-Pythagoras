@@ -1,0 +1,15 @@
+PROJECT PYTHAGORAS
+William Ganucheau
+williamg.me
+
+This project is my attempt at building a robust math utility.
+
+CURRENT FEATURES:
+- Simplifies expressions (addition and subtraction only)
+
+STILL TO BE ADDED:
+- Simplifying multiplication and division
+- More (basic) function: exponents, radicals, parentheses, etc. 
+- Simplifying algebraic expressions
+- Solving algebraic equations
+- Probably a lot more
