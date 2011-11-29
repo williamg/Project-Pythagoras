@@ -24,4 +24,4 @@ First commit, very raw. Addition and subtraction only.
 Still not superior code. Lots of cleaning up to do. Added support for multiplication and division. Support for parenthetical expressions coming soon. Tweaked the function of the Parser class. Now, it is solely static methods that parse strings into the different subcategories (initial input, expressions, terms)
 
 **v0.0.3**
-Reorganized the code. Now there is a subfolder "types" that holds each possible type of input. THis organization allows for the much easier addition of new types and functions. I also added support for parenthetical expression and improved input and expression parsing.
+Reorganized the code. Now there is a subfolder "types" that holds each possible type of input. This organization allows for the much easier addition of new types and functions. I also added support for parenthetical expression and improved input and expression parsing.
