@@ -1,24 +1,29 @@
-package pythagoras.types.expression;
+package pythagoras.strings.types;
 
-import pythagoras.types.*;
+import pythagoras.strings.MathString;
+import pythagoras.strings.Parser;
+import pythagoras.strings.Validator;
 
 public class Expression extends MathString{
 	
 	private static int INVALID_INPUT = -1000000;
+	private static enum OPERATION {ADDITION, MULT_AND_DIV, EXPONENTIAL};
 	
 	/* ========================================= *
 	 * 		         String Parsing		 	     *
 	 * ========================================= */ 
-	private static class ExpressionParser {
+	private class ExpressionParser extends Parser {
 
-		public static String parse(String string) {
-
+		public String parseType(String string) {
+			
 			// uniformity is key!
 			string = string.replace(",", "");
-			string = string.replace("-", "+-");
+			string = string.replace("-", "+(-1)*");
+			string = string.replace("[", "(");
+			string = string.replace("]", ")");
 			
-			// The order of these function calls is important (leave them like this)
-			string = addNegativeOnes(string);
+			// The order of these function calls is important
+			string = expandFactorials(string);
 			string = addMultSymbols(string);
 			string = addParentheses(string);
 			
@@ -26,7 +31,13 @@ public class Expression extends MathString{
 			
 		}
 		
-		private static String insert(String insert, int index, String string) {
+		// This function inserts the given string such that the first character of
+		// the string is at the specified index of the resulting string:
+		// "or" inserted into the string "Hello Wld" at index 7 results in "Hello World"
+		
+		// Another way to think about it is that it inserts the string before the character
+		// at the specified index of the original string
+		private String insert(String insert, int index, String string) {
 			
 			String front = string.substring(0, index);
 			String end   = string.substring(index);
@@ -37,37 +48,32 @@ public class Expression extends MathString{
 			
 		}
 		
-		// Make implied negative 1s explicit
-		// eg: -(9-5) -> -1(9-5)
-		private static String addNegativeOnes(String string) {
+		private String expandFactorials(String string) {
 			
-			for(int i = 1; i < string.length(); i++) {
+			int index = 0;
+			
+			while(string.indexOf('!') != -1) {
 				
-				char currentChar = string.charAt(i);
-				char prevChar    = string.charAt(i-1);
+				index = string.indexOf('!', index);
 				
-				if(currentChar == '(' && prevChar == '-') {
-					
-					string = insert("1", i, string);
-					i++;
-					
-				}
+				return "blah";
 				
 			}
 			
 			return string;
+			
 		}
 		
 		// Make implied multiplication explicit
 		// eg: 2(7) -> 2*(7)
-		private static String addMultSymbols(String string) {
+		private String addMultSymbols(String string) {
 			
 			for(int i = 1; i < string.length(); i++) {
 				
 				char currentChar = string.charAt(i);
 				char prevChar    = string.charAt(i-1);
 				
-				if(currentChar == '(' && !isTerminator(prevChar)) {
+				if(currentChar == '(' && !isTerminator(prevChar) && prevChar != '(') {
 					
 					string = insert("*", i, string);
 					i++;
@@ -81,55 +87,37 @@ public class Expression extends MathString{
 		
 		// This checks whether a given character is a "terminator"
 		// A terminator is a cyborg with the intent of destroying mankind
-		private static boolean isTerminator(char currentChar) {
+		private  boolean isTerminator(char currentChar) {
 			
-			return (currentChar == '*' || currentChar == '/' || currentChar == '+');
+			return (currentChar == '*' || currentChar == '/' || currentChar == '+' || currentChar == '^');
 			
 		}
 		
 		// We use parentheses to isolate individual values:
 		// 2 + 4 * 8 -> (2)+(4)*(8)
-		private static String addParentheses(String string) {
+		private String addParentheses(String string) {
 			
 			// If the string is only a number (not an expression),
-			// then we return the string in the form (<number>)
-			if(string.indexOf('+') == -1 && string.indexOf('*') == -1 && string.indexOf('/') == -1) {
+			// then we return the string in the form <number>
+			// I realize the lack of parentheses seems counter-intuitive, but this prevents double nesting
+			// parentheses.
+			if(string.indexOf('+') == -1 && string.indexOf('*') == -1 && string.indexOf('/') == -1 && string.indexOf('^') == -1) {
 				
-				// Get rid of excess parentheses
+				// Get rid of parentheses
 				string = string.replace('(', '\0');
 				string = string.replace(')', '\0');
 				
-				return "(" + string + ")";
+				return string;
 			
 			}
 			
-			// All strings should either start with a + or (
-			if(string.charAt(0) != '(' && string.charAt(0) != '+') string = "(" + string;
-			
-			// By appending the + to the end, we ensure that the last term is parsed and our
-			// parentheses are closed.
-			string = string + "+";
+			// All expressions should be of the form " +<expression>+ "
+			if(string.charAt(0) != '+') string = "+" + string;
+			string = " " + string + "+ ";
 			
 			for(int i = 1; i < string.length(); i++) {
 				
 				char currentChar = string.charAt(i);
-				char prevChar = string.charAt(i-1);
-				
-				// Insert closing parentheses before every *, /, or +
-				if(isTerminator(currentChar) && prevChar != ')') {
-					
-					string = insert(")", i, string);
-					i+= 1;
-					
-				}
-				
-				// Insert opening parentheses after every *, /, or +
-				if(isTerminator(prevChar) && currentChar != '(') {
-					
-					string = insert("(", i, string);
-					i+= 1;
-					
-				}
 				
 				// When we find a parenthetical expression
 				if(currentChar == '(') {
@@ -148,24 +136,35 @@ public class Expression extends MathString{
 					// Continue from the end of the parenthetical
 					i += middle.length();
 					
+				} else if(isTerminator(currentChar)) {
+					
+					if(string.charAt(i-1) != ')') {
+						string = insert(")", i, string);
+						i++;
+					}
+					
+					if(string.charAt(i+1) != '(') {
+						string = insert("(", i+1, string);
+						i++;
+					}
+					
 				}
 
 			}
 			
-			// Remove the plus sign that we appended in the beginning
-			string = string.substring(0, string.length() - 1);
+			// Remove the padding and plus signs that we added at the beginning
+			string = string.substring(3, string.length() - 3);
 			
 			return string;
 			
 		}
 		
 		// Given an index of an opening parentheses, find the matching closing parentheses
-		private static int getClosingParenthesesFromStart(int index, String string) {
+		private int getClosingParenthesesFromStart(int index, String string) {
 			
 			if(string.charAt(index) != '(') return INVALID_INPUT;
-			
-			int count = 0;
-			for(int i = index; i < string.length(); i++) {
+		
+			for(int i = index, count = 0; i < string.length(); i++) {
 				
 				char currentChar = string.charAt(i);
 				
@@ -187,19 +186,29 @@ public class Expression extends MathString{
 	
 	// This class can be expanded upon to be made more accurate, but for now
 	// we'll just stick with these methods
-	public static class ExpressionValidator {
+	public class ExpressionValidator extends Validator {
+		
+		public boolean stringIsValidForType(String string) {
+			
+			if(!firstCharIsValid(string)) return false;
+			if(!charactersAreValid(string)) return false;
+			if(!signsAreValid(string)) return false;
+			
+			return true;
+			
+		}
 		
 		// The first character of an expression cannot be *, /, or )
-		private static boolean firstCharIsValid(String string) {
+		private boolean firstCharIsValid(String string) {
 			
-			String invalidChars = "*/)";
+			String invalidChars = "*/)^!]";
 			return (invalidChars.indexOf(string.charAt(0)) == -1);
 			
 		}
 		
-		private static boolean charactersAreValid(String string) {
+		private boolean charactersAreValid(String string) {
 			
-			String validChars = ".0123456789+-/*()";
+			String validChars = ".0123456789+-/*()^![]";
 			
 			for(int i = 0; i < string.length(); i++) {
 				
@@ -211,9 +220,9 @@ public class Expression extends MathString{
 		}
 		
 		// Checks that weird things like 4+*5 don't occur
-		private static boolean signsAreValid(String string) {
+		private boolean signsAreValid(String string) {
 			
-			String validChars = ".0123456789+-(";
+			String validChars = ".0123456789+-([";
 			
 			for(int i = 0; i < string.length(); i++) {
 				
@@ -229,26 +238,18 @@ public class Expression extends MathString{
 			return true;
 		}
 		
-		public static boolean isValidExpression(String string) {
-			
-			if(!firstCharIsValid(string)) return false;
-			if(!charactersAreValid(string)) return false;
-			if(!signsAreValid(string)) return false;
-			
-			return true;
-			
-		}
-		
 	}
 	
 	/* ========================================= *
 	 * 		        Instance Methods		 	 *
 	 * ========================================= */ 
 	
+	public ExpressionParser parser = new ExpressionParser();
+	public ExpressionValidator validator = new ExpressionValidator();
+	
 	public Expression(String string) {
 		
 		super(MathString.STRING_TYPE.EXPRESSION, string);
-		setString(ExpressionParser.parse(getString()));
 		
 	}
 	
@@ -258,76 +259,87 @@ public class Expression extends MathString{
 		
 	}
 	
+	public ExpressionParser getParser() {
+		return parser;
+	}
+	
+	public ExpressionValidator getValidator() {
+		return validator;
+	}
+	
 	private String simplify(String string) {
 		
-		string = multiplyAndDivide(string);
-		string = add(string);
+		// Recall the order of operations: PEMDA
+		// Parentheses are handled automatically, and the rest are as follows:
+		string = performOperation(OPERATION.EXPONENTIAL, string);
+		string = performOperation(OPERATION.MULT_AND_DIV, string);
+		string = performOperation(OPERATION.ADDITION, string);
 		return string;
 		
 	}
 	
-	private String multiplyAndDivide(String string) {
+	// Performs all instances of the given operation within the given string
+	private String performOperation(OPERATION operation, String string) {
 		
-		while(string.indexOf('*') >= 0 || string.indexOf('/') >= 0) {
+		while(operationIsPresent(operation, string)) {
 			
-			// Find the index of the closest * or /
+			int index = getNextIndexForOperation(operation, string);
+			
+			int start = getStartIndexOfValueBefore(index, string);
+			int end   = getEndIndexOfValueAfter(index, string);
+			
+			double valueOne = getValueOfString(string.substring(start, index));
+			double valueTwo = getValueOfString(string.substring(index+1, end+1));
+			
+			if(valueOne == INVALID_INPUT || valueTwo == INVALID_INPUT) return "Invalid Input";
+			
+			double result = 0;
+			
+			if(operation == OPERATION.ADDITION)     result = valueOne + valueTwo;
+			if(operation == OPERATION.EXPONENTIAL)  result = Math.pow(valueOne, valueTwo);
+			if(operation == OPERATION.MULT_AND_DIV) {
+				
+				if(index == string.indexOf('*')) result = valueOne * valueTwo;
+				if(index == string.indexOf('/')) result = valueOne / valueTwo;
+			}
+			
+			// Replace the old operation with the result
+			string = string.substring(0, start+1) + result + string.substring(end);
+		}
+		
+		return string;
+		
+	}
+	
+	private boolean operationIsPresent(OPERATION operation, String string) {
+		
+		if(operation == OPERATION.ADDITION)     return (string.indexOf('+') != -1);
+		if(operation == OPERATION.MULT_AND_DIV) return (string.indexOf('*') != -1 || string.indexOf('/') != -1);
+		if(operation == OPERATION.EXPONENTIAL)  return (string.indexOf('^') != -1);
+		
+		return false;
+		
+	}
+	
+	private int getNextIndexForOperation(OPERATION operation, String string) {
+		
+		if(operation == OPERATION.ADDITION)     return string.indexOf('+');
+		if(operation == OPERATION.EXPONENTIAL)  return string.indexOf('^');
+		if(operation == OPERATION.MULT_AND_DIV) {
+			
+			// Since multiplication and division have to be handled concurrently, 
+			// we return the closest index
+			
 			int nextMult = string.indexOf('*');
 			int nextDiv = string.indexOf('/');
 			
 			if(nextDiv < 0) nextDiv = nextMult + 1;
 			if(nextMult < 0) nextMult = nextDiv + 1;
 			
-			int index = (nextMult < nextDiv) ? nextMult : nextDiv; 
-			
-			// Find the first index of the first value and the last index of
-			// the second value
-			int start = getStartIndexOfValueBefore(index, string);
-			int end   = getEndIndexOfValueAfter(index, string);
-			
-			double valueOne = getValueOfString(string.substring(start, index));
-			double valueTwo = getValueOfString(string.substring(index+1, end+1));
-			
-			double result = 0;
-			
-			if(valueOne == INVALID_INPUT || valueTwo == INVALID_INPUT) return "Invalid Input";
-			
-			// Perform the operation
-			// NOTE: remember that it is not possible for nextDiv and nextMult to be equal
-			// therefore, an operation is guaranteed to occur
-			if(nextMult < nextDiv) result = valueOne*valueTwo;
-			if(nextMult > nextDiv) result = valueOne/valueTwo;
-			
-			// Replace the old operation with the result
-			string = string.substring(0, start+1) + result + string.substring(end);
-			
+			return (nextMult < nextDiv) ? nextMult : nextDiv; 
 		}
 		
-		return string;
-		
-	}
-	
-	private String add(String string) {
-		
-		while(string.indexOf('+') >= 0) {
-			
-			int index = string.indexOf('+'); 
-			
-			// Find the first index of the first value and the last index of
-			// the second value
-			int start = getStartIndexOfValueBefore(index, string);
-			int end   = getEndIndexOfValueAfter(index, string);
-			
-			double valueOne = getValueOfString(string.substring(start, index));
-			double valueTwo = getValueOfString(string.substring(index+1, end+1));
-			
-			double result = valueOne + valueTwo;
-			
-			// Replace the old operation with the result
-			string = string.substring(0, start+1) + result + string.substring(end);
-			
-		}
-		
-		return string;
+		return INVALID_INPUT;
 		
 	}
 	

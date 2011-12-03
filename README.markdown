@@ -5,12 +5,11 @@ This project is my attempt at building a robust math utility.
 
 ##CURRENT FEATURES:##
 ****
-- Simplifies expressions (addition, subtraction, multiplication, and division)
-- Parenthetical expressions
+- Simplifies expressions (addition, subtraction, multiplication, and division, exponents)
 
 ##STILL TO BE ADDED:##
 ****
-- More (basic) function: exponents, radicals, etc. 
+- More (basic) function: radicals, factorials, etc. 
 - Simplifying algebraic expressions
 - Solving algebraic equations
 - Probably a lot more
@@ -25,3 +24,6 @@ Still not superior code. Lots of cleaning up to do. Added support for multiplica
 
 **v0.0.3**
 Reorganized the code. Now there is a subfolder "types" that holds each possible type of input. This organization allows for the much easier addition of new types and functions. I also added support for parenthetical expression and improved input and expression parsing.
+
+**v0.0.4**
+Heavy reorganization of the code. Each MathString is now required to have a parsing class that inherits from Parser and a validating class that inherits from Validator. In addition, the raw input is now validated/parsed in the MathString's getInstanceForString(String string) method. Also added support for exponents.

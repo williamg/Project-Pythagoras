@@ -1,6 +1,6 @@
 package pythagoras;
 
-import pythagoras.types.*;
+import pythagoras.strings.MathString;
 
 public class Controller {
 
@@ -15,23 +15,20 @@ public class Controller {
 		// we'll just hard-code it in.
 		
 		// What is the meaning of life, the universe, and everything?
-		String input = "2(1+2(3*4)+5(6-7)) + 2";
-		System.out.print(input + " = ");
+		String input = "(7+9(4-5^(8)))/2";
+		System.out.print(input + " = ");;
 		
-		Parser parser = new Parser();
-		input = parser.parseInitialInput(input);
+		// This function validates input and then parses it for the appropriate type
+		MathString mathString = MathString.getInstanceForString(input);
 		
-		// If we get valid input, manipulate it and display the output
-		if(input != null) {
-		
-			MathString mathString = MathString.getInstanceForString(input);
-			mathString.manipulate();
+		if(mathString != null) {
 			
-			System.out.println(mathString.getString());
+			mathString.manipulate();
+			System.out.print(mathString.getString());
 		
 		} else {
 			
-			System.out.println("Invalid Input");
+			System.out.print("Invalid Input");
 			
 		}
 			
